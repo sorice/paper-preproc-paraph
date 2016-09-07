@@ -1,0 +1,15 @@
+*.swp
+*.directory
+*.pyc
+*~
+*.orig
+*.*#
+*.bak
+*.blg
+*.pdf
+*.backup
+*.spl
+*.bak
+*.aux
+*.bbl
+*.log

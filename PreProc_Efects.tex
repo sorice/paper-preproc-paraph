@@ -1,0 +1,611 @@
+%\documentclass[twoside,english]{elsarticle}
+\documentclass{article}
+  \textheight = 20cm
+  \textwidth = 18cm
+  \topmargin = -2cm
+  \oddsidemargin= -1cm
+  \parindent = 0mm
+
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+%\usepackage[spanish]{babel}
+\pagestyle{headings}
+\usepackage{amsthm}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{color}
+\renewcommand{\labelenumi}{\alph{enumi}$)$ }
+\renewcommand{\tablename}{Tabla}
+\renewcommand{\refname}{Referencias}
+\usepackage{rotating}
+\usepackage[table]{xcolor}
+\usepackage[small,bf,labelsep=period,center]{caption}
+
+\begin{document}
+
+\title{Efectos del Preprocesamiento de Texto \\en la Detección de Paráfrasis}
+\author{{Abel ~Meneses-Abad, Alberto ~Barrón-Cedeño, Julio ~Madera-Quintana}\\
+{\small Natural Language Processing, Universidad de Camagüey, Camagüey, Cuba.}\\
+{\small abelm@uclv.cu, albarron@qf.org.qa, julio.madera@reduc.edu.cu}
+\vspace{0.5cm}}
+%
+
+\maketitle
+
+\section*{Resumen}
+Los algoritmos utilizados en la actualidad para la detección de paráfrasis no evalúan el impacto 
+del preprocesamiento de textos en sus resultados.
+La existencia de una relación entre la exactitud de la detección de la paráfrasis y las técnicas de 
+preprocesamiento podría mejorar el diseño de los sistemas de detección de texto reusado, plagio y 
+otros afines.
+Este artículo muestra la influencia nula de la mayoría de las técnicas básicas de preprocesamiento de 
+texto en la detección de paráfrasis, exceptuando la eliminación de signos de puntuación y el análisis 
+de palabras compuestas, y demuestra la independencia de los resultados del modelo de aprendizaje 
+automático utilizado.
+Los resultados mostrados son obtenidos utilizando 18 medidas morfo-léxicas,
+y 2 corpus, uno de casos de plagio y otro de pares de oraciones parafraseadas.\\
+
+{\bf Palabras claves:} detección de paráfrasis, medidas morfo-léxicas, preprocesamiento de textos
+
+\section*{Abstract}
+Los algoritmos utilizados en la actualidad para la detección de paráfrasis no evalúan el impacto 
+del preprocesamiento de textos en sus resultados.
+La existencia de una relación entre la exactitud de la detección de la paráfrasis y las técnicas de 
+preprocesamiento 
+podría mejorar el diseño de los sistemas de detección de texto reusado, plagio y otros afines.
+Este artículo muestra la influencia nula de la mayoría de las técnicas básicas de preprocesamiento de 
+texto en la detección de paráfrasis, exceptuando la eliminación de signos de puntuación y el análisis 
+de palabras
+compuestas. También muestra la independencia de los resultados del modelo de aprendizaje automático 
+utilizado.
+En experimentos futuros se analizarán el impacto de las combinaciones de técnicas de preprocesamiento  
+por tipologías
+de paráfrasis. Los resultados mostrados son obtenidos utilizando 18 medidas morfo-léxicas, y 2 corpus, 
+uno de casos de plagio y otro de pares de oraciones parafraseadas.\\
+
+{\bf Palabras claves:} detección de paráfrasis, medidas morfo-lexicas, preprocesamiento de textos
+
+\newpage
+\begin{multicols}{2}
+
+\section{Introducción}
+
+La detección de \textbf{texto reusado} consiste en reconocer en un documento fragmentos similares 
+a fragmentos de otro documento \cite{Gaizauskas2001}. Donde los textos analizados pueden ser cortos o largos, 
+con grandes o pequeñas porciones similares 
+(\cite{Brin1995};\cite{Li2006};\cite{Barron-Cedeno2009b};\cite{Yalniz2011}).
+Un problema, en investigación actualmente, es la detección de los fragmentos similares 
+parafraseados (Ejemplos: aquellos con cambios morfológicos, sintácticos, semánticos, etc)
+(\cite{Barron-Cedeno2012a};\cite{Feus2015};\cite{Sundaram2015};\cite{Sanchez-perez2015a}).
+
+Para enfrentar este problema se utilizan variadas medidas de similitud como rasgos descriptivos y 
+diferentes modelos de clasificación de aprendizaje automático.
+Entre las medidas más utilizadas están 
+las morfológicas \cite{Zini2006},
+las léxicas (\cite{Chavez2013};\cite{Kuta2014};\cite{Suchomel2015}), 
+las sintácticas(\cite{Yokoi2014};\cite{Abnar2014};\cite{Ram2014}), 
+las semánticas (\cite{Ul-qayyum2012};\cite{Davila2013};\cite{Paul2015};\cite{Abdi2015}) 
+y las estructurales (\cite{Gipp2011a};\cite{Stamatatos2011}).
+De igual forma se han elaborado experimentos utilizando los clasificadores: 
+Máquina de Soporte de Vectores (\textit{SVM}) \cite{Madnani2012}, \textit{C4.5} \cite{Bar2015}, 
+Redes Neuronales(\textit{NN}) \cite{Bertero2015}, etc.
+
+Sin embargo, en el análisis de texto reusado en bancos de artículos y tesis - textos de 10, 100 o más 
+páginas - el cálculo de estas medidas, al igual que la aplicación de los clasificadores, suele demorar 
+\footnote{En dos tesis de 60 páginas con 2000 oraciones cada una, comparadas de a dos en un PC core i7 
+de 1ra generación el cálculo de las medidas puede demorar 90 segundos.}\cite{Potthast2014a} 
+por lo cual muchos sistemas de detección utilizan el preprocesamiento de texto para disminuir los 
+tiempos de cómputo (\cite{Stamatatos2009};\cite{Park2011}) y, simultáneamente, mejorar los resultados.
+No obstante las técnicas de preprocesamiento consumen tiempos considerables\footnote{Las
+técnicas de preprocesamiento utilizadas en este artículo consumen en total 800 ms por tesis en un PC 
+core i7 de 1ra generación.} \cite{Park2011} y 
+su impacto en el resultado ha sido ya cuestionado \cite{Ceska2009}. Determinar la utilidad del
+preprocesamiento en la detección de la paráfrasis es crucial para sistemas informáticos reales.
+
+Este trabajo evalua los efectos de algunas técnicas 
+de preprocesamiento en la exactitud (\textit{accuracy}) de la detección de paráfrasis 
+utilizando varias distancias de tipo morfo-léxicas, así como sus efectos en la eficiencia 
+(\textit{run-time} total) del proceso de detección.
+Los experimentos muestran que los resultados son independientes del clasificador 
+utilizado, siendo \textit{SVM} el más eficaz y el más frecuente en la literatura consultada. 
+Y que además el tratamiento a las pa\-la\-bras compuestas (Ej.: enseñanza-aprendizaje) es la 
+técnica de preprocesado con más impacto en la detección. 
+
+En la sección 2 se exponen más elementos sobre las técnicas de preprocesamiento así como
+su uso actual en trabajos relacionados con la detección de paráfrasis y similitud semántica. Los 
+recursos utilizados como corpus lingüísticos, las medidas de similitud y los modelos de aprendizaje
+evaluados son expuestos en la sección 3. La sección 4 presenta el diseño de los experimentos, así 
+como una muestra de los valores calculados del preprocesamiento durante las pruebas de normalidad
+utilizando \textit{Shapiro-Wilks} y la aplicación posterior de los test de significación de 
+\textit{Wilcoxon}. Finalmente
+en la sección 5 y última, se exponen las conclusiones del equipo y los trabajos futuros.
+
+\section{Trabajos Relacionados}
+
+El preprocesamiento de textos es la primera etapa recomendada dentro del proceso de detección 
+de textos parafraseados, algo que muchos autores mencionan en sus estudios
+(\cite{Bar2015};\cite{Abnar2014};\cite{Velasquez2015};\cite{Ram2014};\cite{Glinos2014};\cite{Sanchez-perez2015a};\cite{Gupta2014}). 
+Esta es concebida para adecuar o transformar los textos bajo análisis \cite{Jurafsky2008}.
+En ella pueden utilizarse métodos que manejan los signos de puntuación, la segmentación de 
+oraciones, el análisis léxico, etc. Aunque existe una distancia conceptual entre las 
+``técnicas de preprocesamiento de textos'' y las ``técnicas de PLN''\cite[p. 89]{Chong2013}, 
+muchos experimentos de detección de paráfrasis utilizan técnicas básicas de PLN como la lematización, 
+el \textit{stemming} o el etiquetado de partes del discurso (POS)
+dentro de las técnicas de preprocesamiento 
+(\cite{Sharma2014};\cite{Leilei2014};\cite{Palkovskii2014};\cite{Abdi2015};\cite{Gupta2015};\cite{Goot2015}).
+A excepción de la cantidad de información que pueden
+aportar a la solución del problema analizado y los tiempos de cómputo, como no
+se diferencian de las técnicas comunes de preprocesamiento aquí son analizadas como tal.
+
+Todas estas técnicas permiten elaborar expresiones simples despojadas de patrones lingüísticos 
+desarrollados por los seres humanos, lo que permite obtener mejores resultados en actividades de
+procesamiento posterior \cite[p. 9]{Indurkhya2010}. Tal es el caso por ejemplo de algunos 
+resultados en el reconocimiento de plagio parafrástico 
+(\cite{RodriguezTorrejon2010};\cite{Leilei2012};\cite{Abdi2015};\cite{Bar2015}).
+
+Algunas técnicas de preprocesamiento son: la eliminación de palabras vacías, o aquellas de aparición frecuente 
+y sin valor semántico
+como las conjunciones o preposiciones; la lematización o extracción del lexema que iguala palabras 
+como los verbos que modifican su morfema ante un cambio de tiempo verbal; el manejo de signos de puntuación;
+el soporte para contracciones (Ej. en inglés \textit{isn't} se transforma en ``is not''); el soporte para 
+abreviaturas, donde \textit{U.S.} puede transformarse en ``United States''; manejo de mayúsculas; etiquetado 
+de nombres propios o identificación de entidades, etc (\cite{Jurafsky2008};\cite{Indurkhya2010};\cite{Chong2013}).
+
+En textos de una oración, todos los años se desarrollan ta\-reas de evaluación de 
+paráfrasis.\footnote{http://alt.qcri.org/semeval2015/task15} Algunos trabajos muestran la utilización de 
+\textit{stopwords} y lematización para la detección de textos similares 
+(\cite{Kucecka2013};\cite{Sanchez-perez2014};\cite{Bar2015}). 
+Otros investigadores dan una mayor utilidad a técnicas como el etiquetado de partes del 
+discurso (\textit{POS})(\cite{Mccarthy2012};\cite{Chavez2013};\cite{Gupta2014}).
+Más recientemente, algunos estudios muestran resultados utilizando el ``etiquetado 
+de rol semántico'' (\textit{SRL}), que determina el papel con respecto al verbo de la frase sustantiva 
+(\cite{Yadav2012};\cite{Kim2013};\cite{Paul2015}).
+En la literatura también pueden encontrarse algunos experimentos que analizan otras ta\-reas de preprocesamiento menos 
+referenciadas como el tratamiento de errores ortográficos \cite{Xu2013}, etc.
+
+Para la detección de paráfrasis, una vez preprocesado el texto, se calculan las
+medidas de 
+similitud que luego se utilizan para entrenar modelos de aprendizaje automático.
+Algunas de estas características utilizadas para la detección de paráfrasis entre oraciones son: las 
+medidas basadas en CORPUS o en conocimiento \cite{Mihalcea2005}; otras basadas en similitud de palabras o cadenas 
+\cite{Islam2008}; la taxonomía de \textit{Wordnet} \cite{Jiang1997}, 
+ampliamente utilizada en la actualidad (\cite{Pedersen2004}; \cite{Kim2013}; \cite[p. 73]{Chong2013}).
+Li propone la utilización de información semántica y sintáctica \cite{Li2006}. 
+Otras medidas menos conocidas y novedosas también son propuestas como por ejemplo las medidas de traducción 
+automática \cite{Madnani2012}. Un análisis más detallado de estas técnicas puede ser leído en el estudio 
+\textit{ ``A survey of text similarity approaches''}\cite{Gomaa2013}.
+
+Algunos estudios demuestran la influencia positiva que tiene el uso de técnicas
+de preprocesamiento en 
+la sen\-si\-bi\-li\-dad de los sistemas de detección de paráfrasis y similitud 
+semántica (\cite{RodriguezTorrejon2010}; \cite{Ceska2009}; \cite{Park2011}). Otros revelan que su impacto 
+podría ser despreciable (\cite{Chuda2011};\cite{Suchomel2015};\cite{Bar2015}).
+En este artículo se propone la idea de mostrar el impacto de varias técnicas de preprocesamiento en la detección 
+de paráfrasis utilizando medidas morfo-léxicas, así como la independencia del resultado encontrado de los
+modelos de aprendizaje automático y de los corpus utilizados, algo que no revelan los estudios ya citados
+(\cite{RodriguezTorrejon2010}; \cite{Ceska2009}; \cite{Park2011};\cite{Chuda2011};\cite{Suchomel2015};\cite{Bar2015})
+y por lo cual podrían ser cuestionados sus resultados.
+
+\section{Datos, Distancias y Modelos}
+
+\subsection{Corpus Ling\"u\'isticos, Características}
+
+Para el entrenamiento de los clasificadores se utilizaron dos versiones de \textit{corpus} conocidos: 
+el MSRPC \cite{Dolan2004} que es un \textit{corpus} de paráfrasis y el PAN-PC-10 que es el 
+\textit{corpus} de plagio del evento \textit{CLEF/PAN}\cite{Potthast2010b}.
+Tal y como demuestra Rus\cite{Rus2013}, las etiquetas utilizadas en los \textit{corpus} de paráfrasis son 
+muy diferentes, ello representa un primer problema para hacer un experimento estándar. 
+Por ejemplo el corpus de la tarea 6 de SemEval 2012, evento internacional para la evaluación semántica, 
+contiene los siguientes va\-lo\-res de similitud 
+(niveles de paráfrasis o transformación, como puede verse en el README original
+\footnote{https://www.cs.york.ac.uk/semeval-2012/task6/data/uploads/datasets/train-readme.txt}):
+\textit{5 = equi\-va\-lentes, 4 = equivalentes\_pero\_difieren, ..., 1 = no equi\-va\-lentes, 
+0 = tópicos\_diferentes}
+
+\begin{center} 
+\captionof{table}{Caraterísticas de los \textit{corpus} utilizados. Desviación estandar de razgos calculados.}
+\scalebox{0.9}{\begin{tabular}{|c|c|c|c|c|c|c|} \hline
+\textit{corpus} & \begin{sideways} \textit{Total-Casos} \end{sideways} & \begin{sideways} \textit{Parafraseados} \end{sideways} & 
+\begin{sideways} $\sigma$ \textit{Char Diff} \end{sideways} & \begin{sideways} $\sigma$ \textit{Total word Diff} \end{sideways} & 
+\begin{sideways} $\sigma$ \textit{Sentence Diff} \end{sideways} & \begin{sideways} $\sigma$ \textit{Non-Equal Words} \end{sideways} \\ \hline
+MSRPC	& 5801 & 3900	& & & & \\ \hline
+test & 1725 & 1147 & 14.03 & 2.21 & 0.64 & 4.90 \\ \hline
+train & 4076 & 2753 & 14.03 & 2.20 & 0.69 & 14.79 \\ \hline
+PAN-10	& 68558 & +41000 & & & & \\ \hline
+test	& 3000	& 1500	& 49.27 & 9.82 & 0.62 & 32.70 \\ \hline
+train & 10000 & 5000 & 49.55 & 10.02 & 0.65 & 33.93 \\ \hline
+\end{tabular}}\\
+\end{center}
+{\small \textbf{Leyenda:}}\\
+{\small \textit{Char Diff:} abs diferencia en longitud de caracteres.}\\
+{\small \textit{Word Diff:} abs diferencia en el total de palabras.}\\
+{\small \textit{Sentence Diff:} abs diferencia en el total de oraciones.}\\
+{\small \textit{Non-Equal Words:} total de las palabras diferentes.}\\
+
+Sin embargo el \textit{MSRPC} contiene dos niveles \textit{paraphrase/non\_paraphrase}\cite{Dolan2004}, al 
+igual que el SRA con \textit{co\-rrect/incorrect}\cite{Dzikovska2013}, otros pueden verse en \cite{Rus2013}.
+El \textit{PAN-PC-10} utiliza un XML complejo, uno de sus 10 atributos es \textit{obfuscation} 
+(como suele llamarse a los textos plagiados parafraseados de alguna forma), este identifica cinco niveles 
+de paráfrasis: \textit{none, low, high, simulated, translated}. Nitin Madnani reelaboró este \textit{corpus} 
+utilizando solo las categorías \textit{paraphrase/non\_paraphrase}\cite{Madnani2012}, el mismo fue
+reutilizado en este estudio. Finalmente, ambos corpus fueron llevados, básicamente, a la estructura que 
+se muestra a continuación:
+
+\begin{enumerate}
+ \item $paraphrased(1/0)  \rightarrow fragmentoA \rightarrow fragmentoB$
+\end{enumerate}
+
+Ambos \textit{corpus} solo contienen textos en idioma inglés, lo cual podría dejar abierta la posibilidad de 
+evaluar qué ocurre en \textit{corpus} multilingües o monoligües (no en inglés).
+Vale destacar que ninguno de ellos está preprocesado. Algunos datos generales de estos corpus y las
+particiones utilizadas, hechas por sus autores originales, pueden verse en la \textit{tabla 1}.
+
+\subsection{Medidas de Similitud Utilizadas}
+
+Para este conjunto de experimentos se concibió solo la utilización de medidas de similitud basadas en cadenas.
+Estas son conocidas y su implementación se encuentra disponible en código abierto, por lo que se utilizó 
+\textit{SimMetrics}\footnote{http://sourceforge.net/projects/simmetrics/}
+a través de una interfaz gráfica desarrollada en Java. Esta biblioteca contiene 18 medidas de si\-mi\-litud.
+A continuación se listan: 
+\textit{Needleman-Wunch}\cite{spr1970}, \textit{Smith-Waterman}\cite{smith1981}, 
+\textit{Smith-Waterman-Gotoh}\cite{gotoh1982}, \textit{Smith-Waterman-Gotoh-Windowed-Affine}\cite{chapman2005}, 
+\textit{Jaro}\cite{jaro1989}, \textit{Chapman-Length-Deviation}\cite{chapman2009}, \textit{Jaro-Winkler}\cite{winkler1990},
+\textit{Chapman-Mean-Length}\cite{chapman2009}, \textit{QGram-Distance}\cite{ukkonen1992}, \textit{Block-Distance}\cite{krause1973}, 
+\textit{Cosine Similarity}\cite{salton1986}, \textit{Dice Similarity}\cite{dice1945}, \textit{Euclidean Distance}\cite{Deza2009}, 
+\textit{Jaccard Similarity}\cite{jaccard1901}, \textit{Matching Coefficient}\cite{sokal1985}, \textit{Monge-Elkan}\cite{monge1997}, 
+\textit{Overlap-Coefficient}\cite{simpson1960} and \textit{Levensthein}\cite{levenshtein1966}.
+
+\subsection{Aprendizaje Automático, Técnicas de Clasificación}
+
+En virtud de eliminar cualquier influencia de un clasificador específico en los resultados, se experimentó
+con cua\-tro clasificadores referenciados en la literatura sobre detección de paráfrasis. Estos fueron
+\textit{Support Vector Machine}, \textit{C4.5} (implementación de \textit{Weka j48}), \textit{Naive Bayes}, y \textit{Random Forest}.
+Estos han sido habitualmente empleados en la detección de similitud y paráfrasis en textos (\cite{Madnani2012}, 
+\cite{Korkontzelos2013}, \cite{Carnahan2014}, \cite{Bar2015}, \cite{Goot2015}). Para valorar su inclusión en
+este estudio detallado otros clasificadores disponibles en Weka fueron también analizados de forma superficial 
+(observando sus resultados solo con el corpus MSRPC), pero en todos los casos dieron peores resultados en la 
+detección de paráfrasis comparados con el peor resultado de los cuatro clasificadores mencionados anteriormente.
+
+\section{Diseño Experimental}\label{metodos}
+
+Una vez obtenidas las particiones de los \textit{corpus} iniciales estandarizados, según lo referido en 3.1, comprobadas 
+las implementaciones de las medidas de similitud de texto, establecidos el número y los clasificadores a utilizar,
+se di\-se\-ñó un marco experimental utilizándolos como base inicial.
+El proceso completo seguido para este experimento es si\-mi\-lar al de \cite{Chavez2013}, con una distribución 
+diferente de los experimentos, orientados en este caso a calcular los parámetros correspondientes 
+(\textit{Accuracy, Precision, Recall, F-Measure, ROC, Run-Time} Total) para cada técnica de preprocesamiento estudiada. 
+
+El objetivo inicial es ``evaluar los efectos de cada técnica de preprocesamiento en la exactitud de 
+la Detección de Paráfrasis'' (DP), siendo la variable dependiente ``la exactitud de la DP'' 
+y las variables independientes ``cada técnica de preprocesamiento''. Como muestra se utilizaron los 20 resultados 
+de exactitud que se obtienen al aplicar DP a las cinco particiones de los \textit{corpus MSRPC} y \textit{PAN-PC-10}, 
+mostrados en la \textit{tabla 1}, utilizando cada uno de los cuatro clasificadores (\textit{SVM, 
+j48, Naive Bayes, y Random Forest}), en total una muestra de 20 individuos (\textbf{5x4}) para 
+\textit{DP sin preprocesamiento} (condición 1 ó variable independiente $X_1$), y una muestra de 20 individuos 
+para \textit{DP con preprocesado Y} (condición 2 ó variable dependiente $X_{2Y}$). 
+Ambas muestras fueron obtenidas utilizando las mismas particiones de los \textit{corpus} y los mismos clasificadores, 
+por lo tanto se consideran muestras dependientes. En total se realizaron cinco experimentos que son descritos en lo 
+adelante con más detalles.
+
+\begin{itemize}
+ \item \textbf{Experimento 1}: DP sin preprocesamiento. ($X_1$)
+ \item \textbf{Experimento 2}: DP eliminando \textit{stopwords}. ($X_2sw$)
+ \item \textbf{Experimento 3}: DP realizando lematización o extracción del lema. ($X_2lema$)
+ \item \textbf{Experimento 4}: DP realizando \textit{stemming} o extracción de sub-palabra. ($X_2stem$)
+ \item \textbf{Experimento 5}: DP colocando guión bajo en palabras compuestas y eliminando signos de 
+ puntuación.
+ Ejemplos: \textit{non-recurring} aparecerá como \textit{non\_recurring}, \textit{1.2 percent} se transforma en 
+ \textit{1\_2 percent}. ($X_2punct$)
+\end{itemize}
+
+Luego del primer experimento, donde se obtiene $X_1$, se realizaron los otros cuatro experimentos para obtener
+$X_2sw, X_2lema, X_2stem, X_2punct$. Como se desea eva\-luar si alguna de las condiciones $X_{2Y}$ es más 
+significativa que $X_1$ (o sea, preprocesamiento es mejor que no-preprocesamiento) los experimentos 
+estadísticos deben ser conducidos con hipótesis nula $H_0 : \theta_D > 0$ o lo que es lo mismo, invirtiendo el
+resultado que deseamos obtener, demostrar que la diferencia de las medianas $\mu_{X1} - \mu_{X_2Y} > 0$, el
+no-preprocesamiento($X_1$) es más significativo que preprocesar.
+La hipótesis alternativa para este tipo de expe\-rimento es $H_1$: $\theta_D < 0$ , o  
+de forma explícita, ``la condición de preprocesamiento es más efectiva que el no-procesamiento''. 
+ 
+En los cinco experimentos se utilizaron los 18 rasgos morfo-léxicos obtenidos de Chapman\cite{chapman2009}.
+
+\subsection{Preprocesamiento realizado}
+
+Para el preprocesamiento de los datos en los experimentos 2, 3 y 4 -- la eliminación de \textit{stopwords}, 
+la lematización y el \textit{stemming} --  se utilizó la biblioteca \textit{NLTK} de \textit{Python} \cite{Perkins2010}. 
+En el $5^{to}$ experimento se utilizó un \textit{parser} de 
+reconocimiento de abreviaturas y signos de puntuación, basado en expresiones regulares implementada por los autores. 
+Aunque la detección de paráfrasis está orientada generalmente a la detección de similitud entre oraciones, 
+el fenómeno de la paráfrasis puede encontrarse a nivel de segmentos más extensos como párrafos. Esto ha
+motivado el estudio de textos más largos que una oración y en esta investigación se utiliza el PAN-PC-10 de Madnani
+con este objetivo.
+Cuando se trata entonces de textos más extensos, como párrafos, es necesario encontrar adecuadamente los puntos 
+finales de las oraciones para lograr una correcta división de los tokens de la oración y evitar errores
+en el cálculo de las medidas basadas en términos (Ejemplo: \textit{Jaccard}). Así por ejemplo símbolos como 
+`?, !'\hspace{2mm} se convierten en puntos finales y el símbolo `\dots'\hspace{2mm} es eliminado. 
+Esta operación es una de las más complejas.
+Los puntos dentro de abreviaturas son normalizados con `\_' (Ejemplo: `U.S.A.' es convertida a `U\_S\_A\_'),
+de igual forma los guiones de las palabras compuestas son normalizados con con `\_' (Ejemplo: `quarter-circle' es
+convertida a `quarter\_circle'). Aunque \textit{NLTK} permite construir un divisor de oraciones con expresiones regulares,
+el \textit{parser} utilizado ha sido probado con éxito en textos extraídos de documentos en formato \textit{PDF}. 
+Estos contienen secuencias de caracteres frente a las que \textit{NLTK} tiende a errar y que no son característicos 
+de textos escritos directamente por humanos (Ejemplos: secuencias de caracteres en blanco, regiones de viñetas, 
+índices de vocabulario, regiones de código fuente, etc).
+Los algoritmos utilizados analizan cada signo tomando una decisión para su conversión, quedando solamente
+los signos `\_'\hspace{2mm} y `.'\hspace{2mm} que se corresponden con los puntos finales.
+
+\subsection{Generación de los Modelos de Aprendizaje Automático}
+
+\begin{center}
+\scalebox{0.8}{\begin{tabular}{c|ccccc}
+ Corpus & \begin{sideways}MSRPC train \end{sideways} & \begin{sideways}MSRPC test \end{sideways} & 
+\begin{sideways}PAN train \end{sideways} & \begin{sideways}PAN test \end{sideways} & 
+\begin{sideways}PAN+MSRPC test \end{sideways} \\
+\hline
+ Casos & 4076 & 1725 & 10000 & 3000 & 4725 \\
+\hline
+\multicolumn{6}{c}{Medidas} \\\hline
+ Accuracy  & 0.729 & 0.730 & \cellcolor[gray]{0.20} {\color{white}0.916} 
+ & \cellcolor[gray]{0.20} {\color{white}0.913} & \cellcolor[gray]{0.80} 0.832 \\
+ Precision & 0.748 & 0.749 & \cellcolor[gray]{0.20} {\color{white}0.927} 
+ & \cellcolor[gray]{0.20} {\color{white}0.93} & 0.811 \\
+ Recall    & \cellcolor[gray]{0.60} 0.905 & \cellcolor[gray]{0.80} 0.894 & \cellcolor[gray]{0.60} 0.904 
+ & \cellcolor[gray]{0.80} 0.894 & \cellcolor[gray]{0.20} {\color{white}0.913} \\
+ F-Measure & 0.819 & 0.815 & \cellcolor[gray]{0.20} {\color{white}0.915} 
+ & \cellcolor[gray]{0.20} {\color{white}0.912} & \cellcolor[gray]{0.60} 0.859 \\
+ ROC	    & 0.635 & 0.65  & \cellcolor[gray]{0.20} {\color{white}0.916} 
+ & \cellcolor[gray]{0.20} {\color{white} 0.913} & \cellcolor[gray]{0.80} 0.821 \\\hline
+\multicolumn{6}{c}{Run-Time}\\\hline
+  preproc  & \cellcolor[gray]{0.50} 0.199 & \cellcolor[gray]{0.20} {\color{white}0.084} & 0.768 & 
+  \cellcolor[gray]{0.70} 0.230 & 0.338 \\
+  Total    & \cellcolor[gray]{0.70} 0.829s & \cellcolor[gray]{0.50} 0.634s & 3.228s & 
+  \cellcolor[gray]{0.20} {\color{white}0.38s} & 3.856s \\
+\end{tabular}}\\
+\vspace{3mm}
+\captionof{table}{Eliminación de \textit{stopwords}. Resultados de la clasificación utilizando todos los \textit{corpus} 
+y \textit{SVM}.}
+\end{center}
+
+Se calcularon las medidas de similitud para cada par de fragmentos y se guardaron las representaciones de cada
+objeto en formato ARFF para ser procesados con la herra\-mienta \textit{Weka}. 
+Se utilizaron las medidas de evaluación \textit{accuracy, precision, recall, F-Measure} y \textit{ROC} para cada experimento
+utilizando un clasificador y un \textit{corpus}. Ver ejemlo en la \textit{tabla 2}.
+
+Inicialmente se midieron los parámetros bajo análisis (\textit{Accuracy, Precision, Recall}, etc) para el clasificador 
+\textit{SVM} sin preprocesar los textos.
+Tomando como muestra los corpus utilizados, se repitió el experimento mostrado en la \textit{tabla 2} para las restantes 
+técnicas de preprocesamiento.
+Se repitió todo el diseño experimental para cada clasificador.
+
+\subsection{Análisis Estadístico}
+
+Para el análisis estadístico se evaluó el comportamiento de la exactitud en la clasificación para
+todos los \textit{corpus} y con cada clasificador utilizando una sola técnica de preprocesamiento. 
+En la \textit{tabla 3} columna cinco (\textit{$X_{2sw}$}) se muestran los 20 sujetos obtenidos para la técnica de 
+filtrado de \textit{stopwords}. 
+
+% \caption{Valores de exactitud obtenidos para No-preprocesamiento y Filtrado de Stopwords.}
+\begin{center}
+\captionof{table}{Valores de exactitud obtenidos para la clasificación de los pares no~-preprocesados y preprocesados.}
+\scalebox{0.8}{\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+n &  \begin{sideways} Clasificador \end{sideways} & \begin{sideways} Corpus \end{sideways} & $X_1$ & $X_{2sw}$ &
+$X_{2lema}$ & $X_{2stem}$ & $X_{2punct}$ \\ \hline
+1 & \multirow{5}{*}{SVM} & 1&\cellcolor[gray]{0.40} {\color{white}0.753} 
+&\cellcolor[gray]{0.40} {\color{white}0.729} &\cellcolor[gray]{0.40} {\color{white}0.756} 
+&\cellcolor[gray]{0.40} {\color{white}0.751} &\cellcolor[gray]{0.20} {\color{white}0.757} \\
+2 & & 2& \cellcolor[gray]{0.40} {\color{white}0.742} &\cellcolor[gray]{0.40} {\color{white}0.730} &\cellcolor[gray]{0.40} {\color{white}0.740} 
+&\cellcolor[gray]{0.40} {\color{white}0.743} &\cellcolor[gray]{0.20} {\color{white}0.761} \\
+3 & & 3& 0.922 & 0.916 &\cellcolor[gray]{0.40} {\color{white}0.923} &\cellcolor[gray]{0.40} {\color{white}0.923} & 0.924 \\
+4 & & 4& 0.920 & 0.913 & 0.918 & 0.919 &\cellcolor[gray]{0.20} {\color{white}0.924} \\
+5 & & 5& 0.838 & 0.832 & 0.837 & 0.834 & 0.840 \\ \hline
+
+6 & \multirow{5}{*}{J48} & 1& 0.675 & 0.703 & 0.720 & 0.726 & 0.724 \\
+7 & & 2& 0.701 & 0.689 & 0.704 & 0.703 & 0.704 \\
+8 & & 3& 0.920 & 0.918 & 0.92 & 0.921 & 0.920 \\
+9 & & 4& 0.913 & 0.916 & 0.91 & 0.916 & 0.918 \\
+10 & & 5& 0.837 & 0.82 &  0.834 & 0.835 & 0.83 \\ \hline
+
+11 & \multirow{5}{*}{\begin{sideways} \parbox[c]{2cm}{Naive Bayes} \end{sideways}} & 1& 0.682 & 0.668 & 0.682 & 0.685 & 0.684 \\
+12 & & 2& 0.681 & 0.659 & 0.676 & 0.680 & 0.675 \\
+13 & & 3& 0.904 & 0.899 & 0.905 & 0.906 & 0.904 \\
+14 & & 4& \cellcolor[gray]{0.40} {\color{white}0.915} & 0.901 & 0.913 & 0.914 & 0.913 \\
+15 & & 5& 0.804 & 0.797 & 0.800 & 0.803 & 0.800 \\ \hline
+
+16 & \multirow{5}{*}{\begin{sideways} \parbox[c]{2cm}{Random Forrest} \end{sideways}} & 1 & 0.725 & 0.699 & 0.723 & 0.738 & 0.732 \\
+17 & & 2& 0.730 & 0.700 & 0.723 & 0.680 & 0.721 \\
+18 & & 3& \cellcolor[gray]{0.40} {\color{white}0.926} &\cellcolor[gray]{0.20} {\color{white}0.927} 
+& 0.922 & 0.922 &\cellcolor[gray]{0.20} {\color{white}0.927} \\
+19 & & 4& 0.902 &\cellcolor[gray]{0.40} {\color{white}0.923} &\cellcolor[gray]{0.40} {\color{white}0.920} 
+&\cellcolor[gray]{0.40} {\color{white}0.920} & 0.923 \\
+20 & & 5& \cellcolor[gray]{0.20} {\color{white}0.849} & \cellcolor[gray]{0.40} {\color{white}0.834} 
+&\cellcolor[gray]{0.40} {\color{white}0.843} &\cellcolor[gray]{0.40} {\color{white}0.841} 
+&\cellcolor[gray]{0.40} {\color{white}0.842} \\ \hline
+\end{tabular}}
+\vspace{2mm}\\
+{\small \textbf{Corpus:} $1 \rightarrow MSRPC train$, $2 \rightarrow MSRPC test$, $3 \rightarrow PAN train$, $4 \rightarrow PAN test$, $5 \rightarrow MSRPC+PAN test$}\\
+{\small \textbf{n:} tamaño de la muestra.}
+\end{center}
+
+Se procedió a la evaluación de la normalidad de los datos para aplicar algún test de significación. Como
+se obtuvieron solamente 20 individuos se aplicó una técnica no paramétrica de normalidad, en este caso 
+\textit{Shapiro-Wilks}, la más recomendada para $n \leq 30$. Se obtuvieron los valo\-res de 0.007 para $X_1$ y 0.0063 para 
+$X_{2sw}$\footnote{Los cálculos fueron realizados con la herramienta \textit{RKward}, utilizando el lenguaje R.},
+lo que signi\-fica que ninguna de las dos variables se comportó como una distribución normal ($\textbf{p} > 0.05$).
+Se aplicó entonces la prueba de \textit{Wilcoxon} de rangos con signo para muestras pareadas. Esta técnica permite evaluar
+cuándo una condición es mejor que otra en dos variables independientes con muestras dependientes \cite[p.484]{Sheskin2000}.
+
+\begin{center}
+\captionof{table}{Cáculo de valores de rangos de \textit{Wilcoxon} para no~-Preprocesamiento y filtrado de \textit{stopwords}.}
+\scalebox{0.9}{\begin{tabular}{|c|c|c|c|}
+\hline
+$X_1-X_{2sw}$ & \begin{sideways} Posición \end{sideways} & Rank & \begin{sideways} Signed Rank \end{sideways} \\ \hline
+.024 & 17 & 17 & 17 \\
+.012 & 9 & 9.5 & 9.5 \\
+.006 & 5 & 5.5 & 5.5 \\
+.007 & 7 & 7.5 & 7.5 \\
+.006 & 6 & 5.5 & 5.5 \\
+-.028 & 19 & 19 & -19 \\
+.012 & 10 & 9.5 & 9.5 \\
+.002 & 2 & 2 & 2 \\
+-.003 & 3 & 3 & -3 \\
+.017 & 14 & 14 & 14 \\
+.014 & 11 & 11 & 11 \\
+.022 & 16 & 16 & 16 \\ 
+.005 & 4 & 4 & 4 \\
+.014 & 12 & 12 & 12 \\
+.007 & 8 & 7.5 & 7.5 \\
+.026 & 18 & 18 & 18 \\
+.03 & 20 & 20 & 20 \\
+-.001 & 1 & 1 & -1 \\
+-.021 & 15 & 15 & -15 \\
+.015 & 13 & 13 & 13 \\\hline
+\end{tabular}}
+\vspace{2mm}\\
+{$\Sigma R+ = 172, \Sigma R- = -38$}
+\end{center}
+
+Recordando que $H_1:\theta_D < 0$ es nuestra hipótesis alternativa, debería cumplirse que 
+$|\Sigma R+| < |\Sigma R-|$ para sostenerse, lo cual no es cierto pues $172 > 38$. Por lo tanto la hipótesis nula no puede ser negada,
+lo que significa que es más alta la probabilidad de que ``el no-preprocesamiento($X_1$) ofrezca mejores resultados
+en la detección de paráfrasis que el filtrado de \textit{stopwords}''.
+Para conocer la significación estadística de este resultado el valor del \textit{estadístico T de Wilcoxon} debe ser 
+$\leq$ que el valor crítico del test de \textit{Wilcoxon} para el grado de significación 0.05 o 0.01.
+Concluídos los cálculos (ver \textit{tabla 4}) se asume que 
+el valor absoluto menor es el estadístico T de \textit{Wilcoxon}, en este caso es \textbf{38}.
+Como $H_0 : \theta_D > 0$, se considera una prueba de una sola cola.
+Se busca luego en la tabla de valores T críticos de \textit{Wilcoxon} para este tipo de prueba con 
+una significación de 0.05 es \textbf{60}, y de 0.01 es \textbf{43}.  Entonces, como $38 < 60$ y $38 < 43$ 
+(o sea $T_{2sw} < T_{20;0,05}$ y $T_{2sw} < T_{20;0,01}$), hay suficiente
+evidencia estadística para concluir que utilizando solo medidas de distancia morfo-léxicas se obtienen mejores 
+resultados en la detección de paráfrasis sin filtrado de \textit{stopwords} en los niveles de significación 
+0.05 y 0.01 respectivamente.
+
+Similar al caso mostrado, se realizaron las evaluaciones de la exactitud de cada técnica de preprocesamiento
+contra los resultados obtenidos en $X_1$, o sea sin preprocesamiento. 
+Los resultados se muestran a continuación.
+
+\begin{center}
+\scalebox{0.9}{\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+n  & \begin{sideways} $X_1-X_{2lema}$ \end{sideways} & \begin{sideways} Signed Rank \end{sideways}  
+& \begin{sideways} $X_1-X_{2stem}$ \end{sideways} & \begin{sideways} Signed Rank \end{sideways} 
+& \begin{sideways} $X_1-X_{2punct}$ \end{sideways} & \begin{sideways} Signed Rank \end{sideways} \\ \hline
+1  & -0.003 & -9.5 & 0.002 & 9.5 & -0.004 & -8 \\
+2  &  0.002 & 5.5 & -0.001 & -4 & -0.019 & -16 \\
+3  & -0.001 & -2 & -0.001 & -4 & -0.002 & -3.5 \\
+4  &  0.002 & 5.5 & 0.001 & 4 & -0.004 & -8 \\
+5  &  0.001 & 2 & 0.004 & 14.5 & -0.002 & -3.5 \\
+6  & -0.045 & -18 & -0.051 & -20 & -0.049 & -18 \\
+7  & -0.003 & -9.5 & -0.002 & -9.5 & -0.003 & -6 \\
+8  &  0     & - & -0.001 & -4 & 0 & - \\
+9  &  0.003 & -9.5 & -0.003 & -12.5 & -0.005 & -10 \\
+10 &  0.003 & -9.5 & 0.002 & 9.5 & 0.007 & 13 \\
+11 &  0     & - & -0.003 & -12.5 & -0.002 & -3.5 \\
+12 &  0.005 & 14 & 0.001 & 4 & 0.006 & 11 \\
+13 & -0.001 & -2 & -0.002 & -9.5 & 0 & - \\
+14 &  0.002 & 5.5 & 0.001 & 4 & 0.002 & 3.5 \\
+15 &  0.004 & 12.5 & 0.001 & 4 & 0.004 & 8 \\
+16 &  0.002 & 5.5 & -0.013 & -17 & -0.007 & -13 \\
+17 &  0.007 & 16 & 0.05 & 19 & 0.009 & 15 \\
+18 &  0.004 & 12.5 & 0.004 & 14.5 & -0.001 & -1 \\
+19 & -0.018 & -17 & -0.018 & -18 & -0.021 & -17 \\
+20 & 0.006 & 15 & 0.008 & 16 & 0.007 & 13 \\ \hline
+\multicolumn{2}{r}{$\Sigma R+$}  &  94 &  & 99 &  & 63.5 \\ \hline
+\multicolumn{2}{r}{$\Sigma R-$}  & -77 &  & -111 &  & -107.5 \\ \hline
+\multicolumn{2}{r}{$T_{Wilcoxon}$}  & 77 &  & 99 &  & 63.5 \\ \hline
+\multicolumn{2}{r}{$T_{cWilcoxon(20,0.05)}$}  & 60 &  & 60 &  & 60 \\ \hline
+\multicolumn{2}{r}{$T_{cWilcoxon(20,0.01)}$}  & 43 &  & 43 &  & 43 \\ \hline
+\multicolumn{2}{r}{$|\Sigma R+| < |\Sigma R-|$}  & No &  & Sí &  & Sí \\ \hline
+\multicolumn{2}{r}{$T < T_{cW}$} & No &  & No &  & No \\ \hline
+\multicolumn{2}{r}{$H_1 : \theta_D < 0$}  & No &  & No &  & No \\ \hline
+\end{tabular}}
+\captionof{table}{Cáculo de valores de rangos de \textit{Wilcoxon}.}
+\end{center}
+
+\subsection*{Resultados y Discusión}
+
+Utilizando solo medidas de similitud morfo-léxicas, la eliminación de los \textit{stopwords} no produce 
+mejores resultados que el no-preprocesamiento en la detección de paráfrasis, siendo estadísticamente 
+significativas las evidencias utilizadas en este trabajo.
+Los tiempos totales crecieron desde un 10 por ciento hasta cinco veces el valor sin preprocesamiento, y el mejor
+resultado se obtuvo con el \textit{corpus PAN test} tomando solo 0.1ms por caso. El peor caso fue la
+variante \textit{PAN + MSRPC} cuyos resultados estuvieron en el orden de los 0.8ms por caso.
+El tamaño del \textit{corpus} (1725,3000, 4725,10000) no determina el impacto del preprocesamiento en el tiempo
+total de ejecución (13\%, 8\%, 60\%, 23\%), no influye tampoco en la exactitud (0.73,0.913,0.832,0.916).
+Esto conlleva a pensar en la influencia de algunas de las características internas de estos corpus en las
+cuales se diferencian, siendo necesario un nuevo diseño experimental con particiones de un mismo \textit{corpus} con
+iguales características morfo-léxicas, y el análisis de los pares en los que difieren los resultados de
+ambas técnicas para un mismo clasificador y cada partición respectivamente.
+
+El proceso de lematización resultó ser muy costoso en tiempo y dio peores resultados que el no-preprocesamiento. 
+Al igual que en el caso del filtrado de \textit{stopwords} los resultados demuestran que no mejora la detección de
+la paráfrasis, aunque la evidencia estadística en este caso no es suficiente para asegurarlo bajo
+cualquier circunstancia. Para la 
+comprensión de este particular se hace necesario el análisis estadístico de los casos clasificados
+incorrectamente en cada uno de los experimentos. Aunque se presupone la influencia del ``error
+de transformación'' del algoritmo de lematización, también pudieran impactar en estos resultados las 
+lematizaciones correctas debido al tipo de las medidas de distancia utilizadas.
+
+El experimento de \textit{stemming} mostró mejores y peores resultados en métricas diferentes en todos los \textit{corpus}.
+Estadísticamente esta técnica de preprocesamiento mejora la detección de paráfrasis aunque también son 
+insuficientes las evidencias. Tiene un comportamiento en tiempo de ejecución menor a la lematización 
+(hasta en un 50\%) y al tratamiento de cadenas (hasta 3x). En las observaciones realizadas se pudo comprobar 
+que la obtención de palabras similares recortadas erróneamente influje en el aumento de los falsos positivos.
+
+El experimento 5, el preprocesamiento de los signos de puntuación, permitió obtener mejores resultados
+en todos los \textit{corpus} y aspectos, incluyendo cuatro de los mayores resultados de exactitud globales por \textit{corpus}.
+Sin embargo se debe diseñar con mayor rigurosidad el problema de las expresiones que normalizan el texto.
+Se filtraron un grupo de condiciones, pero otras dieron problemas en la generación de los casos normalizados. En 
+el futuro, los mayores esfuerzos sobre técnicas básicas deben concentrarse en las de este tipo de 
+tratamiento de cadenas y signos de puntuación. Pudiera pensarse que la optimización de este punto podría dar mayores 
+ventajas para su aplicación en las experimentaciones futuras.
+
+\section*{Conclusiones y Trabajos Futuros}
+\label{conclusiones}
+
+En este trabajo hemos explorado el impacto de la utilización de técnicas de preprocesamiento en la 
+detección de paráfrasis. Los cinco experimentos realizados permiten concluir que las técnicas de 
+filtrado de \textit{stopwords} y la lematización no tienen influencia significativa sobre la detección de 
+paráfrasis utilizando medidas morfo-lexicas.
+
+Las técnicas de preprocesamiento que incluyen el tratamiento de cadena que simplifica las oraciones 
+atendiendo a sus signos de puntuación, las palabras compuestas, y las abreviaturas tiene un impacto 
+directo en la detección de paráfrasis. De modo similar ocurre con el \textit{stemming} sin embargo, en ambos
+casos las evidencias estadísticas no son suficientes para confirmarlo bajo cualquier circunstancia.
+
+No deberá incluirse el preprocesamiento en el diseño final de un sistema de detección de paráfrasis, o en 
+algoritmos de detección de texto reusado que solo utilicen medidas de similitud morfo-léxicas.
+
+\vspace{2mm}
+\label{trabajos futuros}
+En el futuro se analizarán la diferencia entre el tiempo total del clasificador antes de preprocesar y 
+después de preprocesar. Se prevee además el análisis estadístico de correlación entre las propiedades del 
+corpus y los diferentes tiempos de ejecución.
+Al igual que en el estudio de \cite{Chuda2011}, se verificará la influencia de la combinación de 
+técnicas de preprocesamiento sobre la detección de paráfrasis.
+
+En próximas etapas se incorporarán otras medidas de similitud sintácticas y semánticas, y se comprobará su 
+efectividad en la detección de paráfrasis aplicando combinaciones de estas medidas. Tal y como expresa
+Bär, ``estos experimentos son relativamente complicados por la ausencia de una biblioteca de similitud
+que contenga todas las medidas''\cite[p.24]{Bar2015}. Para lograr su utilización posterior tanto en ambientes
+experimentales como reales, se propone la creación de una biblioteca de medidas de similitud, estandarizada
+y en lenguaje \textit{Python} que reproduzca las mejores experiencias de la literatura científica y de las bibliotecas
+conocidas como \textit{Simmetrics} y \textit{DKPro-Similarity}.
+
+Utilizando el \textit{corpus P4P} \cite{Barron-Cedeno2012a} anotado con las tipologías de paráfrasis se clasificarán 
+los casos y se estudiará el efecto de las técnicas \textit{NLP} sobre la exactitud en la detección en cada tipología.
+Se realizarán además algunos experimentos sobre el idioma español utilizando el \textit{corpus} de \textit{TNLP},
+similar al \textit{P4P}, elaborado en Cuba con estos fines\cite{Enamorado2015}.
+
+\section*{Agradecimientos}
+
+Este trabajo ha sido desarrollado con el apoyo de la Universidad de Camagüey, la Universidad Marta Abreu de Las Villas
+y de la Universidad de Granma. Y financiado por el fondo familiar Conde-Meneses.
+
+\bibliographystyle{plain}
+\textbf{\textcolor{red}{\emph{TODO: Revisar las 80 citas contra Google Scholar.}}}
+\bibliography{Linguistica}
+\end{multicols}
+\end{document}
